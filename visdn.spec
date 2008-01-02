@@ -26,6 +26,7 @@ BuildRequires:	asterisk
 BuildRequires:	asterisk-devel
 %endif
 BuildRequires:	zlib-devel
+BuildRoot:	%{_tmppath}/%{name}-%{version}-build
 
 %description
 vISDN is an ISDN framework designed to be clean, general purpose,
