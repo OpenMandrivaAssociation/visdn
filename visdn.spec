@@ -155,7 +155,7 @@ install -d %{buildroot}%{_sysconfdir}/visdn
 
 %if %{build_asterisk}
 install -d %{buildroot}%{_sysconfdir}/asterisk
-install -d %{buildroot}%{_localstatedir}/asterisk/sms_spooler
+install -d %{buildroot}%{_localstatedir}/lib/asterisk/sms_spooler
 install -m0644 samples/vgsm.conf %{buildroot}%{_sysconfdir}/asterisk/vgsm.conf
 install -m0644 samples/vgsm_operators.conf %{buildroot}%{_sysconfdir}/asterisk/vgsm_operators.conf
 install -m0644 samples/visdn.conf.sample %{buildroot}%{_sysconfdir}/asterisk/visdn.conf
@@ -279,7 +279,7 @@ dkms remove -m	%{name} -v %{version}-%{release} --rpm_safe_upgrade --all
 %attr(0755,root,root) %{_libdir}/asterisk/app_visdn_ppp.so
 %attr(0755,root,root) %{_libdir}/asterisk/chan_vgsm.so
 %attr(0755,root,root) %{_libdir}/asterisk/chan_visdn.so
-%attr(0755,asterisk,asterisk) %dir %{_localstatedir}/asterisk/sms_spooler
+%attr(0755,asterisk,asterisk) %dir %{_localstatedir}/lib/asterisk/sms_spooler
 %endif
 
 %files -n dkms-%{name}
