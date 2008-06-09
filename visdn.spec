@@ -231,9 +231,13 @@ rm -rf %{buildroot}%{_libdir}/asterisk/*.a
 rm -rf %{buildroot}%{_libdir}/asterisk/*.la
 rm -rf docs/doxy/.arch-*
 
+%if %mdkversion < 200900
 %post -n %{libname} -p /sbin/ldconfig
+%endif
 
+%if %mdkversion < 200900
 %postun -n %{libname} -p /sbin/ldconfig
+%endif
 
 %post -n dkms-%{name}
 dkms add -m	%{name} -v %{version}-%{release} --rpm_safe_upgrade
