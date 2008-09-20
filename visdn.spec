@@ -8,7 +8,7 @@
 Summary:	Versatile ISDN framework for Linux
 Name:		visdn
 Version:	0.18.2
-Release:	%mkrel 8
+Release:	%mkrel 9
 License:	GPL
 Group:		System/Libraries
 URL:		http://www.visdn.org/
@@ -16,6 +16,7 @@ Source0:	http://www.visdn.org/download/visdn-%{version}.tar.bz2
 Patch0:		visdn-0.16.1-udev_090.diff
 Patch1:		visdn-0.16.1-sms_spooler_dir.diff
 Patch2:		visdn-0.18.2-2617_fixes.diff
+Patch3:		visdn-INT_MAX_fix.diff
 Patch10:	visdn-0.16.1-dkms_friendly.diff
 BuildRequires:	libtool
 BuildRequires:	autoconf2.5
@@ -65,6 +66,7 @@ Requires:	ppp
 %description -n	ppp-%{name}
 Cologne Chip's HFC-4S and HFC-8S vISDN driver for pppd.
 
+%if %{build_asterisk}
 %package -n	asterisk-%{name}
 Summary:	Cologne Chip's HFC-4S and HFC-8S vISDN driver for the Asterisk PBX
 Group:		System/Servers
@@ -73,6 +75,7 @@ Requires:	dkms-%{name} = %{version}
 
 %description -n	asterisk-%{name}
 Cologne Chip's HFC-4S and HFC-8S vISDN driver for the Asterisk PBX.
+%endif
 
 %package -n	dkms-%{name}
 Summary:	Versatile ISDN framework kernel drivers
@@ -106,6 +109,7 @@ Various tools for %{name}
 %patch0 -p0
 %patch1 -p0
 %patch2 -p1
+%patch3 -p1
 
 # tuck away the needed source for the dkms package
 mkdir -p dkms
@@ -120,7 +124,6 @@ perl -pi -e "s|/usr/lib|%{_libdir}|g" configure*
 libtoolize --copy --force; aclocal -I config; autoconf; automake --gnu --add-missing --copy
 rm -rf autom4te.cache
 popd
-
 
 # lib64 fix
 perl -pi -e "s|/usr/lib|%{_libdir}|g" configure*
@@ -147,7 +150,7 @@ libtoolize --copy --force; aclocal -I config; autoconf; automake --gnu --add-mis
 %make
 
 %install
-[ "%{buildroot}" != "/" ] && rm -rf %{buildroot}
+rm -rf %{buildroot}
 
 %makeinstall_std
 
@@ -248,7 +251,7 @@ dkms install -m	%{name} -v %{version}-%{release} --rpm_safe_upgrade
 dkms remove -m	%{name} -v %{version}-%{release} --rpm_safe_upgrade --all
 
 %clean
-[ "%{buildroot}" != "/" ] && rm -rf %{buildroot}
+rm -rf %{buildroot}
 
 %files -n %{libname}
 %defattr(-,root,root)
