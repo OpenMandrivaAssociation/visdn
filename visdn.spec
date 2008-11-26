@@ -1,22 +1,23 @@
-%define build_asterisk 0
+%define build_asterisk 1
 %{?_with_asterisk: %{expand: %%global build_asterisk 1}}
 %{?_without_asterisk: %{expand: %%global build_asterisk 0}}
 
-%define	major _0
-%define libname	%mklibname q931 %{major}
+%define	major 0
+%define libname %mklibname visdn %{major}
+%define develname %mklibname visdn -d
 
 Summary:	Versatile ISDN framework for Linux
 Name:		visdn
-Version:	0.18.3
+Version:	1.1.2
 Release:	%mkrel 1
-License:	GPL
+License:	GPLv2
 Group:		System/Libraries
 URL:		http://www.visdn.org/
-Source0:	http://www.visdn.org/download/visdn-%{version}.tar.bz2
+Source0:	http://www.visdn.org/download/vstuff-%{version}.tar.gz
 Patch0:		visdn-0.16.1-udev_090.diff
 Patch1:		visdn-0.16.1-sms_spooler_dir.diff
-Patch2:		visdn-0.18.2-2617_fixes.diff
-Patch3:		visdn-INT_MAX_fix.diff
+Patch2:		vstuff-1.1.2-no_module_for_libs_fix.diff
+Patch3:		vstuff-1.1.2-linkage_fix.diff
 Patch10:	visdn-0.16.1-dkms_friendly.diff
 BuildRequires:	libtool
 BuildRequires:	autoconf2.5
@@ -43,15 +44,16 @@ standards compliant, for voice and data applications.
 
 This package provides the shared libraries for %{name}.
 
-%package -n	%{libname}-devel
+%package -n	%{develname}
 Summary:	Header files and libraries needed for development with %{name}
 Group:		Development/C
+Requires:	%{libname} = %{version}
 Provides:	%{name}-devel = %{version}
 Provides:	lib%{name}-devel = %{version}
 Provides:	libq931-devel = %{version}
-Requires:	%{libname} = %{version}
+Obsoletes:	%{mklibname q931 _0 -d}
 
-%description -n	%{libname}-devel
+%description -n	%{develname}
 vISDN is an ISDN framework designed to be clean, general purpose,
 standards compliant, for voice and data applications.
 
@@ -104,9 +106,9 @@ Various tools for %{name}
 
 %prep
 
-%setup -q -n %{name}-%{version}
+%setup -q -n vstuff-%{version}
 
-%patch0 -p0
+%patch0 -p1
 %patch1 -p0
 %patch2 -p1
 %patch3 -p1
@@ -115,7 +117,7 @@ Various tools for %{name}
 mkdir -p dkms
 pushd dkms
 cp -rp ../config ../modules .
-cp -p ../Makefile.am ../aclocal.m4 ../configure.ac ../config.h.in ../COPYING ../ChangeLog ../AUTHORS  .
+cp -p ../Makefile.am ../aclocal.m4 ../acinclude.m4 ../configure.ac ../config.h.in ../COPYING ../ChangeLog ../AUTHORS  .
 %patch10 -p0
 export WANT_AUTOCONF_2_5=1
 touch INSTALL NEWS README
@@ -137,6 +139,7 @@ libtoolize --copy --force; aclocal -I config; autoconf; automake --gnu --add-mis
 %configure2_5x \
     --enable-shared \
     --enable-static \
+    --localstatedir=/var/lib \
     --disable-kernel-modules \
 %if %{build_asterisk}
     --enable-asterisk-modules \
@@ -149,26 +152,40 @@ libtoolize --copy --force; aclocal -I config; autoconf; automake --gnu --add-mis
 
 %make
 
+%make -C vgsm2test
+
+%make -C tests
+
 %install
 rm -rf %{buildroot}
 
 %makeinstall_std
 
+%makeinstall_std -C vgsm2test
+
+%makeinstall_std -C tests
+
+# fix too generic names
+mv %{buildroot}%{_sbindir}/dsptest %{buildroot}%{_sbindir}/%{name}-dsptest
+mv %{buildroot}%{_sbindir}/sniffer %{buildroot}%{_sbindir}/%{name}-sniffer
+mv %{buildroot}%{_sbindir}/traffic %{buildroot}%{_sbindir}/%{name}-traffic
+
 install -d %{buildroot}%{_sysconfdir}/visdn
 
 %if %{build_asterisk}
 install -d %{buildroot}%{_sysconfdir}/asterisk
-install -d %{buildroot}%{_localstatedir}/lib/asterisk/sms_spooler
-install -m0644 samples/vgsm.conf %{buildroot}%{_sysconfdir}/asterisk/vgsm.conf
-install -m0644 samples/vgsm_operators.conf %{buildroot}%{_sysconfdir}/asterisk/vgsm_operators.conf
-install -m0644 samples/visdn.conf.sample %{buildroot}%{_sysconfdir}/asterisk/visdn.conf
+install -d %{buildroot}/var/lib/asterisk/sms_spooler
+install -m0644 samples/etc_asterisk/vgsm.conf %{buildroot}%{_sysconfdir}/asterisk/vgsm.conf
+install -m0644 samples/etc_asterisk/vgsm_countries.conf %{buildroot}%{_sysconfdir}/asterisk/vgsm_countries.conf
+install -m0644 samples/etc_asterisk/vgsm_operators.conf %{buildroot}%{_sysconfdir}/asterisk/vgsm_operators.conf
+install -m0644 samples/etc_asterisk/visdn.conf.sample %{buildroot}%{_sysconfdir}/asterisk/visdn.conf
 %endif
 
 install -d %{buildroot}/usr/src/%{name}-%{version}-%{release}/
 cp -rp dkms/* %{buildroot}/usr/src/%{name}-%{version}-%{release}/
 
 install -d %{buildroot}/etc/udev/rules.d
-install -m0644 samples/30-visdn.rules %{buildroot}/etc/udev/rules.d/30-visdn.rules
+install -m0644 samples/etc_udev_rules.d/30-visdn.rules %{buildroot}/etc/udev/rules.d/30-visdn.rules
 
 cat > %{buildroot}/usr/src/%{name}-%{version}-%{release}/dkms.conf <<EOF
 PACKAGE_VERSION="%{version}-%{release}"
@@ -176,38 +193,35 @@ PACKAGE_VERSION="%{version}-%{release}"
 # Items below here should not have to change with each driver version
 PACKAGE_NAME="%{name}"
 
-MAKE[0]="./configure --prefix=%{_prefix} --sysconfdir=%{_sysconfdir} --libdir=%{_libdir} --enable-drivers=hfc-usb,hfc-pci,hfc-4s,hfc-e1; make"
+MAKE[0]="./configure --prefix=%{_prefix} --sysconfdir=%{_sysconfdir} --libdir=%{_libdir} --enable-drivers=all; make"
+
 CLEAN="make clean"
 
-BUILT_MODULE_NAME[0]="kfifo"
-BUILT_MODULE_NAME[1]="lapd"
-BUILT_MODULE_NAME[2]="visdn-core"
-BUILT_MODULE_NAME[3]="visdn-ec"
-BUILT_MODULE_NAME[4]="visdn-hfc-4s"
-BUILT_MODULE_NAME[5]="visdn-hfc-e1"
-BUILT_MODULE_NAME[6]="visdn-hfc-pci"
-BUILT_MODULE_NAME[7]="visdn-hfc-usb"
-BUILT_MODULE_NAME[8]="visdn-netdev"
-BUILT_MODULE_NAME[9]="visdn-ppp"
-BUILT_MODULE_NAME[10]="visdn-softcxc"
-BUILT_MODULE_NAME[11]="visdn-streamport"
-BUILT_MODULE_NAME[12]="visdn-timer-system"
-BUILT_MODULE_NAME[13]="visdn-vgsm"
+BUILT_MODULE_NAME[0]="kstreamer"
+BUILT_MODULE_NAME[1]="visdn"
+BUILT_MODULE_NAME[2]="visdn-hfc-4s"
+BUILT_MODULE_NAME[3]="ks-softswitch"
+BUILT_MODULE_NAME[4]="visdn-netdev"
+BUILT_MODULE_NAME[5]="lapd"
+BUILT_MODULE_NAME[6]="ks-userport"
+BUILT_MODULE_NAME[7]="ks-milliwatt"
+BUILT_MODULE_NAME[8]="vgsm"
+BUILT_MODULE_NAME[9]="vgsm2"
+BUILT_MODULE_NAME[10]="vdsp"
+BUILT_MODULE_NAME[11]="ks-ppp"
 
-BUILT_MODULE_LOCATION[0]="modules/kfifo"
-BUILT_MODULE_LOCATION[1]="modules/lapd"
-BUILT_MODULE_LOCATION[2]="modules/core"
-BUILT_MODULE_LOCATION[3]="modules/ec"
-BUILT_MODULE_LOCATION[4]="modules/hfc-4s"
-BUILT_MODULE_LOCATION[5]="modules/hfc-e1"
-BUILT_MODULE_LOCATION[6]="modules/hfc-pci"
-BUILT_MODULE_LOCATION[7]="modules/hfc-usb"
-BUILT_MODULE_LOCATION[8]="modules/netdev"
-BUILT_MODULE_LOCATION[9]="modules/ppp"
-BUILT_MODULE_LOCATION[10]="modules/softcxc"
-BUILT_MODULE_LOCATION[11]="modules/streamport"
-BUILT_MODULE_LOCATION[12]="modules/timer-system"
-BUILT_MODULE_LOCATION[13]="modules/vgsm"
+BUILT_MODULE_LOCATION[0]="modules/kstreamer"
+BUILT_MODULE_LOCATION[1]="modules/visdn"
+BUILT_MODULE_LOCATION[2]="modules/hfc-4s"
+BUILT_MODULE_LOCATION[3]="modules/softswitch"
+BUILT_MODULE_LOCATION[4]="modules/netdev"
+BUILT_MODULE_LOCATION[5]="modules/lapd"
+BUILT_MODULE_LOCATION[6]="modules/userport"
+BUILT_MODULE_LOCATION[7]="modules/milliwatt"
+BUILT_MODULE_LOCATION[8]="modules/vgsm"
+BUILT_MODULE_LOCATION[9]="modules/vgsm2"
+BUILT_MODULE_LOCATION[10]="modules/vdsp"
+BUILT_MODULE_LOCATION[11]="modules/ppp"
 
 DEST_MODULE_LOCATION[0]="/kernel/drivers/isdn/visdn"
 DEST_MODULE_LOCATION[1]="/kernel/drivers/isdn/visdn"
@@ -221,8 +235,6 @@ DEST_MODULE_LOCATION[8]="/kernel/drivers/isdn/visdn"
 DEST_MODULE_LOCATION[9]="/kernel/drivers/isdn/visdn"
 DEST_MODULE_LOCATION[10]="/kernel/drivers/isdn/visdn"
 DEST_MODULE_LOCATION[11]="/kernel/drivers/isdn/visdn"
-DEST_MODULE_LOCATION[12]="/kernel/drivers/isdn/visdn"
-DEST_MODULE_LOCATION[13]="/kernel/drivers/isdn/visdn"
 
 AUTOINSTALL=yes
 EOF
@@ -258,10 +270,13 @@ rm -rf %{buildroot}
 %doc AUTHORS COPYING ChangeLog README TODO docs/* samples/ethereal_coloring_rules
 %{_libdir}/*.so.*
 
-%files -n %{libname}-devel
+%files -n %{develname}
 %defattr(-,root,root)
 %dir %{_includedir}/libq931
 %{_includedir}/libq931/*.h
+%dir %{_includedir}/libkstreamer
+%{_includedir}/libkstreamer/*.h
+%{_includedir}/*.h
 %{_libdir}/*.so
 %{_libdir}/*.a
 %{_libdir}/*.la
@@ -274,28 +289,29 @@ rm -rf %{buildroot}
 %if %{build_asterisk}
 %files -n asterisk-%{name}
 %defattr(-,root,root)
-%doc samples/extensions.conf.sample
-%doc samples/extensions.conf.sample_passthru
-%doc samples/vgsm.conf
-%doc samples/vgsm_operators.conf
-%doc samples/visdn.conf.sample
-%doc samples/visdn.conf.sample_passthru
-%attr(0644,root,root) %config(noreplace) %{_sysconfdir}/asterisk/visdn.conf
+%doc samples/etc_asterisk/extensions.conf.vgsm
+%doc samples/etc_asterisk/extensions.conf.visdn1
+%doc samples/etc_asterisk/extensions.conf.visdn2
+%doc samples/etc_asterisk/vgsm.conf
+%doc samples/etc_asterisk/vgsm_countries.conf
+%doc samples/etc_asterisk/vgsm_operators.conf
+%doc samples/etc_asterisk/visdn.conf.sample
+%doc samples/etc_asterisk/visdn.conf.sample_passthru
 %attr(0644,root,root) %config(noreplace) %{_sysconfdir}/asterisk/vgsm.conf
+%attr(0644,root,root) %config(noreplace) %{_sysconfdir}/asterisk/vgsm_countries.conf
 %attr(0644,root,root) %config(noreplace) %{_sysconfdir}/asterisk/vgsm_operators.conf
-%attr(0755,root,root) %{_libdir}/asterisk/app_visdn_ppp.so
+%attr(0644,root,root) %config(noreplace) %{_sysconfdir}/asterisk/visdn.conf
+%attr(0755,root,root) %{_libdir}/asterisk/app_pipe.so
 %attr(0755,root,root) %{_libdir}/asterisk/chan_vgsm.so
 %attr(0755,root,root) %{_libdir}/asterisk/chan_visdn.so
-%attr(0755,asterisk,asterisk) %dir %{_localstatedir}/lib/asterisk/sms_spooler
+%attr(0755,root,root) %{_libdir}/asterisk/res_kstreamer.so
+%attr(0755,asterisk,asterisk) %dir /var/lib/asterisk/sms_spooler
 %endif
 
 %files -n dkms-%{name}
 %defattr(-,root,root)
-%doc samples/device-pci-0000:00:06.0
-%doc samples/device-pci-0000:00:07.0
-%doc samples/device-pci-0000:00:09.0
-%doc samples/device-usb-2-2
-%doc vgsm_firmware/firmware-*img vgsm_firmware/README
+%doc samples/etc_visdn_devices/*
+%doc vgsm2_firmware/*
 %dir %{_sysconfdir}/visdn
 %attr(0644,root,root) %config(noreplace) %{_sysconfdir}/udev/rules.d/30-visdn.rules
 #%attr(0644,root,root) %config(noreplace) %{_sysconfdir}/zaptel.conf
@@ -303,6 +319,13 @@ rm -rf %{buildroot}
 
 %files tools
 %defattr(-,root,root)
+%attr(0755,root,root) %{_bindir}/vgsm2test
+%attr(0755,root,root) %{_sbindir}/kstool
+%attr(0755,root,root) %{_sbindir}/%{name}-dsptest
+%attr(0755,root,root) %{_sbindir}/%{name}-sniffer
+%attr(0755,root,root) %{_sbindir}/%{name}-traffic
+%attr(0755,root,root) %{_sbindir}/vgsm2reg
 %attr(0755,root,root) %{_sbindir}/vgsmctl
+%attr(0755,root,root) %{_sbindir}/vgsm_stress
 %attr(0755,root,root) %{_sbindir}/visdn_configurator
-%attr(0755,root,root) %{_sbindir}/visdnctl
+%attr(0755,root,root) %{_sbindir}/visdn_netdev_ctl
