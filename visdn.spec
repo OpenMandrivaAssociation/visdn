@@ -7,8 +7,8 @@
 
 Summary:	Versatile ISDN framework for Linux
 Name:		visdn
-Version:	0.18.2
-Release:	%mkrel 9
+Version:	0.18.3
+Release:	%mkrel 1
 License:	GPL
 Group:		System/Libraries
 URL:		http://www.visdn.org/
@@ -306,5 +306,3 @@ rm -rf %{buildroot}
 %attr(0755,root,root) %{_sbindir}/vgsmctl
 %attr(0755,root,root) %{_sbindir}/visdn_configurator
 %attr(0755,root,root) %{_sbindir}/visdnctl
-
-
