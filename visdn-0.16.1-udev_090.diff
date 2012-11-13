@@ -1,0 +1,12 @@
+diff -Naur vstuff-1.1.2/samples/etc_udev_rules.d/30-kstreamer.rules vstuff-1.1.2.oden/samples/etc_udev_rules.d/30-kstreamer.rules
+--- vstuff-1.1.2/samples/etc_udev_rules.d/30-kstreamer.rules	2008-11-05 15:49:11.000000000 +0100
++++ vstuff-1.1.2.oden/samples/etc_udev_rules.d/30-kstreamer.rules	2008-11-26 15:40:31.000000000 +0100
+@@ -1 +1 @@
+-KERNEL=="*", SUBSYSTEM=="kstreamer", NAME="ks/%k", GROUP="pbx", MODE="0660"
++KERNEL=="*", SUBSYSTEM=="kstreamer", NAME="ks/%k", GROUP="asterisk", MODE="0660"
+diff -Naur vstuff-1.1.2/samples/etc_udev_rules.d/30-visdn.rules vstuff-1.1.2.oden/samples/etc_udev_rules.d/30-visdn.rules
+--- vstuff-1.1.2/samples/etc_udev_rules.d/30-visdn.rules	2008-11-05 15:49:10.000000000 +0100
++++ vstuff-1.1.2.oden/samples/etc_udev_rules.d/30-visdn.rules	2008-11-26 15:40:37.000000000 +0100
+@@ -1 +1 @@
+-KERNEL=="*", SUBSYSTEM=="visdn", NAME="visdn/%k", GROUP="pbx", MODE="0660"
++KERNEL=="*", SUBSYSTEM=="visdn", NAME="visdn/%k", GROUP="asterisk", MODE="0660"

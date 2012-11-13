@@ -1,0 +1,11 @@
+--- samples/etc_asterisk/vgsm.conf	2008-11-05 15:49:10.000000000 +0100
++++ samples/etc_asterisk/vgsm.conf.oden	2008-11-26 15:42:20.000000000 +0100
+@@ -174,7 +174,7 @@
+ ;
+  
+ [general]
+-sms_spooler = /usr/lib/asterisk/sms_spooler
++sms_spooler = /var/lib/asterisk/sms_spooler
+ sms_spooler_pars = -it
+ 
+ [huntgroup:vodafone]
