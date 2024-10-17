@@ -12,7 +12,7 @@ Version:	1.1.2
 Release:	%mkrel 2
 License:	GPLv2
 Group:		System/Libraries
-URL:		http://www.visdn.org/
+URL:		https://www.visdn.org/
 Source0:	http://www.visdn.org/download/vstuff-%{version}.tar.gz
 Patch0:		visdn-0.16.1-udev_090.diff
 Patch1:		visdn-0.16.1-sms_spooler_dir.diff
