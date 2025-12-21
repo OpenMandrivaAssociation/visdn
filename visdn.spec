@@ -19,6 +19,8 @@ Patch1:		visdn-0.16.1-sms_spooler_dir.diff
 Patch2:		vstuff-1.1.2-no_module_for_libs_fix.diff
 Patch3:		vstuff-1.1.2-linkage_fix.diff
 Patch10:	visdn-0.16.1-dkms_friendly.diff
+BuildRequires:	libtool-base
+BuildRequires:	slibtool
 BuildRequires:	libtool
 BuildRequires:	autoconf2.5
 BuildRequires:	automake1.8
