@@ -9,7 +9,7 @@
 Summary:	Versatile ISDN framework for Linux
 Name:		visdn
 Version:	1.1.2
-Release:	%mkrel 2
+Release:	3
 License:	GPLv2
 Group:		System/Libraries
 URL:		https://www.visdn.org/
